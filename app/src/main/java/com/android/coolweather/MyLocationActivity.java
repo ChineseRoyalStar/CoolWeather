@@ -73,6 +73,7 @@ public class MyLocationActivity extends AppCompatActivity {
         LocationClientOption option = new LocationClientOption();
         option.setScanSpan(5000);
         option.setLocationMode(LocationClientOption.LocationMode.Device_Sensors);
+        option.setOpenGps(true);
         mLocationClient.setLocOption(option);
     }
 
@@ -102,7 +103,7 @@ public class MyLocationActivity extends AppCompatActivity {
                 if (grantResults.length > 0) {
                     for (int result : grantResults) {
                         if (result != PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(this, "必须统一所有的权限才能使用本程序",Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "必须同意所有的权限才能使用本程序",Toast.LENGTH_SHORT).show();
                             finish();
                             return;
                         }
@@ -115,7 +116,6 @@ public class MyLocationActivity extends AppCompatActivity {
             break;
             default:
         }
-
     }
 
     private void navigateTo(BDLocation location) {

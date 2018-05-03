@@ -20,6 +20,7 @@ import com.android.coolweather.db.County;
 import com.android.coolweather.db.Province;
 import com.android.coolweather.util.HttpUtil;
 import com.android.coolweather.util.Utility;
+import com.baidu.location.LocationClient;
 
 import org.litepal.crud.DataSupport;
 
@@ -50,6 +51,7 @@ public class ChooseAreaFragment extends Fragment {
     private ArrayAdapter<String> adapter;
 
     private List<String> dataList = new ArrayList<>();
+
     /**
      * 省列表
      */
@@ -102,7 +104,7 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 }else if (currentLevel == LEVEL_COUNTY) {
                     String weatherId = countyList.get(position).getWeatherId();
-                    if (getActivity() instanceof MainActivity) {
+                    if (getActivity() instanceof CityListActivity) {
                         Intent intent = new Intent(getActivity(), WeatherActivity.class);
                         intent.putExtra("weather_id", weatherId);
                         startActivity(intent);
@@ -113,7 +115,6 @@ public class ChooseAreaFragment extends Fragment {
                         activity.swipeRefresh.setRefreshing(true);
                         activity.requestWeather(weatherId);
                     }
-
                 }
             }
         });

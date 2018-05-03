@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <fragment
-        android:id="@+id/choose_area_fragment"
-        android:name="com.android.coolweather.ChooseAreaFragment"
+    <Button
+        android:id="@+id/chooseCityFromList"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="wrap_content"
+        android:text="从城市列表中选择"/>
 
-</FrameLayout>
+    <Button
+        android:id="@+id/locateCityFromGPS"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="查看当天城市天气"/>
+
+</LinearLayout>

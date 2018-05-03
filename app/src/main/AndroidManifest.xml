@@ -26,14 +26,16 @@
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="ozZuKr1HIdQTWaoHoGY6b3GiFPkWW3E7"/>
-        <activity android:name=".MyLocationActivity">
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".CityListActivity"/>
         <activity android:name=".WeatherActivity" />
+        <activity android:name=".MyLocationActivity"/>
 
         <service
             android:name=".service.AutoUpdateService"

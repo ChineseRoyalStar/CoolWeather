@@ -1,12 +1,17 @@
 package com.android.coolweather;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -26,12 +31,19 @@ import com.android.coolweather.gson.Weather;
 import com.android.coolweather.service.AutoUpdateService;
 import com.android.coolweather.util.HttpUtil;
 import com.android.coolweather.util.Utility;
+import com.baidu.location.BDLocation;
+import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClient;
+import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.SDKInitializer;
 import com.bumptech.glide.Glide;
 
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -71,8 +83,13 @@ public class WeatherActivity extends AppCompatActivity {
 
     private ImageView bingPicImg;
 
+    private LocationClient mLocationClient;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        mLocationClient = new LocationClient(getApplicationContext());
+        mLocationClient.registerLocationListener(new WeatherActivity.MyLocationListener());
+        SDKInitializer.initialize(getApplicationContext());
         super.onCreate(savedInstanceState);
         if (Build.VERSION.SDK_INT >= 21) {
             View decorView = getWindow().getDecorView();
@@ -103,18 +120,16 @@ public class WeatherActivity extends AppCompatActivity {
         });
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        String weatherString = prefs.getString("weather", null);
+        //String weatherString = prefs.getString("weather", null);
 
         swipeRefresh = (SwipeRefreshLayout)findViewById(R.id.swipte_refresh);
         swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
-        if (weatherString != null) {
-            // 有缓存时直接解析天气数据
-            Weather weather = Utility.handleWeatherResponse(weatherString);
-            mWeatherId = weather.basic.weatherId;
-            showWeatherInfo(weather);
+
+        mWeatherId = getIntent().getStringExtra("weather_id");
+        if (mWeatherId == null) {
+            requestPermissions();
         } else {
             // 无缓存时去服务器查询天气
-            mWeatherId = getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
             requestWeather(mWeatherId);
         }
@@ -132,6 +147,62 @@ public class WeatherActivity extends AppCompatActivity {
             loadBingPic();
         }
     }
+
+    private void requestPermissions() {
+
+        List<String> permissionList = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(WeatherActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if (ContextCompat.checkSelfPermission(WeatherActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.READ_PHONE_STATE);
+        }
+        if (ContextCompat.checkSelfPermission(WeatherActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (!permissionList.isEmpty()) {
+            String []permissions = permissionList.toArray(new String[permissionList.size()]);
+            ActivityCompat.requestPermissions(WeatherActivity.this, permissions, 1);
+        } else {
+            requestLocation();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 1:
+                if (grantResults.length > 0) {
+                    for (int result : grantResults) {
+                        if (result != PackageManager.PERMISSION_GRANTED) {
+                            Toast.makeText(this, "必须同意所有的权限才能使用本程序",Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
+                        }
+                    }
+                    requestLocation();
+                }else {
+                    Toast.makeText(this, "发生未知错误", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+                break;
+            default:
+        }
+    }
+
+    private void requestLocation() {
+        initLocation();
+        mLocationClient.start();
+    }
+
+    private void initLocation() {
+        LocationClientOption option = new LocationClientOption();
+        option.setScanSpan(5000);
+        option.setLocationMode(LocationClientOption.LocationMode.Device_Sensors);
+        option.setOpenGps(true);
+        mLocationClient.setLocOption(option);
+    }
+
     /**
      * 根据天气id请求城市天气信息
      */
@@ -241,5 +312,19 @@ public class WeatherActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, AutoUpdateService.class);
         startService(intent);
+    }
+
+    public class MyLocationListener implements BDLocationListener {
+        @Override
+        public void onReceiveLocation(BDLocation bdLocation) {
+            if (bdLocation.getLocType() == BDLocation.TypeGpsLocation || bdLocation.getLocType() == BDLocation.TypeNetWorkLocation) {
+                double longitude = bdLocation.getLongitude();
+                double latitude = bdLocation.getLatitude();
+                StringBuffer buffer = new StringBuffer();
+                buffer.append(latitude).append(",").append(longitude);
+                mWeatherId = buffer.toString();
+                requestWeather(mWeatherId);
+            }
+        }
     }
 }
